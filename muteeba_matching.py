@@ -334,16 +334,52 @@ Return ONLY this JSON structure:
 # ---------------- Submission Checklist ----------------
 
 def generate_checklist(matched_results):
-    """Build an actionable checklist from Document-category requirements."""
+    """
+    Build an actionable submission checklist.
+
+    Includes:
+    - All document requirements
+    - Missing mandatory requirements
+    - Unclear requirements that need verification
+    """
+
     checklist = []
+
     for r in matched_results:
-        if r.get("category") == "Documents":
-            status = "checked" if r.get("status") == "Matched" else "unchecked"
+        status = r.get("status")
+        priority = r.get("priority")
+        category = r.get("category")
+        requirement = r.get("requirement")
+
+        # Add documents that need to be submitted
+        if category == "Documents":
             checklist.append({
-                "item": r.get("requirement"),
-                "status": status,
-                "priority": r.get("priority")
+                "item": requirement,
+                "status": "checked" if status == "Matched" else "unchecked",
+                "priority": priority,
+                "action": "Ready for submission"
+                if status == "Matched"
+                else "Prepare / submit required document"
             })
+
+        # Add missing mandatory requirements as urgent actions
+        elif status == "Missing" and priority == "Mandatory":
+            checklist.append({
+                "item": requirement,
+                "status": "unchecked",
+                "priority": "Mandatory",
+                "action": "Resolve missing mandatory requirement"
+            })
+
+        # Add unclear mandatory requirements for verification
+        elif status == "Unclear" and priority == "Mandatory":
+            checklist.append({
+                "item": requirement,
+                "status": "unchecked",
+                "priority": "Mandatory",
+                "action": "Verify requirement and provide evidence"
+            })
+
     return checklist
 
 
